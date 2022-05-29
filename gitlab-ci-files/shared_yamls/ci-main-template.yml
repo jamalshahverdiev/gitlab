@@ -1,0 +1,101 @@
+variables:
+  DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL
+  DOCKERFILE_PATH: $DOCKERFILE_PATH
+  SERVICE_NAME: $SERVICE_NAME
+  ENV_NAME: $ENV_NAME
+
+stages:
+  - build
+  - push
+  - deploy
+
+.awscli_docker:
+  variables:
+    DOCKER_HOST: tcp://docker:2375 
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  image: 
+    name: jamalshahverdiev/awsclidind:latest
+    entrypoint: [""]
+  before_script:
+    - aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+    - aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+    - aws configure set region ${AWS_DEFAULT_REGION}
+  tags:
+    - ${GL_RUNNER_TAG}
+
+.aws_cli:
+  image: 
+    name: amazon/aws-cli:2.2.18
+    entrypoint: [""]
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_DEFAULT_REGION
+  tags:
+    - ${GL_RUNNER_TAG}
+
+.build-module:
+  stage: build
+  image: gradle:7.4.2-jdk11-alpine
+  script:
+    - gradle :$MODULE:bootJar --no-daemon\
+  before_script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+  artifacts:
+    paths:
+      - $MODULE/build/libs
+    expire_in: 1d
+  cache:
+    paths:
+      - .gradle/wrapper
+      - .gradle/caches
+  tags:
+    - ${GL_RUNNER_TAG}
+    
+.docker-push-module:
+  extends: .awscli_docker
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]  
+  stage: push
+  script:
+    - cp $MODULE/build/libs/*.jar $MODULE/$DOCKERFILE_PATH && cd $MODULE/$DOCKERFILE_PATH
+    - aws ecr get-login-password --region "${AWS_DEFAULT_REGION}" | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+    - docker build -t $DOCKER_REGISTRY_URL/$MODULE:$CI_COMMIT_SHORT_SHA --build-arg ENV=$ENV_NAME --no-cache .
+    - docker push $DOCKER_REGISTRY_URL/$MODULE:$CI_COMMIT_SHORT_SHA
+
+.deploy_dev:
+  extends: .deploy_job
+  variables:
+    ECS_CLUSTER: $ECS_CLUSTER_NAME
+    TASK_DEF_NAME: $ENV_NAME-$MODULE
+    TASK_DEF_FILE: file://$TD_FILE_NAME
+  tags:
+    - ${GL_RUNNER_TAG}
+
+.deploy_prod:
+  extends: .deploy_job
+  variables:
+    ECS_CLUSTER: $ECS_CLUSTER_NAME
+    TASK_DEF_NAME: $ENV_NAME-$MODULE
+    TASK_DEF_FILE: file://$TD_FILE_NAME
+  tags:
+    - ${GL_RUNNER_TAG}
+
+.deploy_job:
+  extends: .aws_cli
+  stage: deploy
+  script:
+    - cd $MODULE/$DOCKERFILE_PATH && REPLACE_FILE=$(echo $TASK_DEF_FILE | awk -F '//' '{ print $2 }')
+    - sed -i "s/REPLACE_IMAGE_HASH/$CI_COMMIT_SHORT_SHA/g" ${REPLACE_FILE}
+    - aws ecs register-task-definition
+      --region ${AWS_DEFAULT_REGION}
+      --family ${TASK_DEF_NAME}
+      --requires-compatibilities FARGATE
+      --cli-input-json ${TASK_DEF_FILE}
+    - aws ecs update-service
+      --region ${AWS_DEFAULT_REGION}
+      --cluster ${ECS_CLUSTER}
+      --service ${ENV_NAME}-${MODULE}
+      --task-definition ${TASK_DEF_NAME}

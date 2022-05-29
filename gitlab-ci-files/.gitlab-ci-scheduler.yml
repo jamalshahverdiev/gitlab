@@ -1,0 +1,35 @@
+variables:
+  MS_GROUP: backend
+  NAMESPACE: payriff
+  MS_REPO: MonoRepo
+  MS_FLDR: microservices
+  CI_REPO: ci_cd
+  MS_DOMAIN: gitlab.com
+  MS_PIPELINE_TEMPLATE: pipeline-template.yaml
+  SCRIPT: generator.sh
+  YAML_NAME: .gitlab-ci-microservices.yml
+  YAML_TEMP_PATH: shared_yamls
+  GIT_EMAIL: jamal.shahverdiev@gmail.com
+  GIT_USER: 'Jamal Shahverdiev'
+
+stages:
+  - deploy
+
+.deploy:
+  stage: deploy
+  script:
+    - apk add git
+    - git config --global user.email "${GIT_EMAIL}" && git config --global user.name "${GIT_USER}"
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@${MS_DOMAIN}/${NAMESPACE}/${MS_GROUP}/${MS_REPO}.git" 
+    - cp ${SCRIPT} ${MS_PIPELINE_TEMPLATE} ${MS_REPO}
+    - git clone "https://gitlab-ci-token:${CI_JOB_TOKEN}@${MS_DOMAIN}/${NAMESPACE}/${CI_REPO}.git"
+    - cd ${MS_REPO} && git checkout master && ./${SCRIPT} ${YAML_NAME} && rm -rf ../${CI_REPO}/${YAML_TEMP_PATH}/${MS_FLDR}
+    - mv ${YAML_NAME} ../${CI_REPO} && mv ${MS_FLDR} ../${CI_REPO}/${YAML_TEMP_PATH}/
+    - cd ../${CI_REPO} && git add ${YAML_TEMP_PATH} ${YAML_NAME} && git commit -m "Updated Microservices CI" && git push origin main || true 
+  tags:
+    - aws-gitlab-runner
+
+deploy_prod:
+  environment:
+    name: prod
+  extends: .deploy

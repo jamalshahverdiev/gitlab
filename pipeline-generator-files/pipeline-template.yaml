@@ -1,0 +1,83 @@
+.${MS_NAME}-module-dev:
+  variables:
+    MODULE: "${MS_NAME}"
+  only:
+    refs:
+      - develop
+    variables:
+      - ${DOLLAR}CI_PIPELINE_SOURCE == 'push'
+      - ${DOLLAR}CI_PIPELINE_SOURCE == 'merge_request_event'
+    changes:
+      - ${MS_NAME}/**/*
+
+.${MS_NAME}-module-prod:
+  variables:
+    MODULE: "${MS_NAME}"
+  only:
+    refs:
+      - master
+    variables:
+      - ${DOLLAR}CI_PIPELINE_SOURCE == 'push'
+      - ${DOLLAR}CI_PIPELINE_SOURCE == 'merge_request_event'
+    changes:
+      - ${MS_NAME}/**/*
+
+build-${MS_NAME}-dev:
+  stage: build
+  extends:
+    - .${MS_NAME}-module-dev
+    - .build-module
+
+build-${MS_NAME}-prod:
+  stage: build
+  extends:
+    - .${MS_NAME}-module-prod
+    - .build-module
+
+docker-push-${MS_NAME}-dev:
+  environment:
+    name: dev
+  stage: push
+  extends:
+    - .${MS_NAME}-module-dev
+    - .docker-push-module
+  needs:
+    - build-${MS_NAME}-dev
+
+docker-push-${MS_NAME}-prod:
+  environment:
+    name: prod
+  stage: push
+  extends:
+    - .${MS_NAME}-module-prod
+    - .docker-push-module
+  needs:
+    - build-${MS_NAME}-prod
+
+deploy-${MS_NAME}-dev:
+  environment:
+    name: dev
+  stage: deploy
+  extends:
+    - .${MS_NAME}-module-dev
+    - .deploy_dev
+  dependencies:
+    - build-${MS_NAME}-dev
+    - docker-push-${MS_NAME}-dev
+  only:
+    refs:
+      - develop
+
+deploy-${MS_NAME}-prod:
+  environment:
+    name: prod
+  stage: deploy
+  extends:
+    - .${MS_NAME}-module-prod
+    - .deploy_prod
+  needs:
+    - build-${MS_NAME}-prod
+    - docker-push-${MS_NAME}-prod
+  only:
+    refs:
+      - master
