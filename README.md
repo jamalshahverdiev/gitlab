@@ -1,2 +1,2 @@
-[Gitlab CI/CD files](https://www.genome.gov/)
-[Dynamic Pipeline generator code files](https://www.genome.gov/)
+- [Gitlab CI/CD files](https://github.com/jamalshahverdiev/gitlab-pipeline-generator/tree/main/gitlab-ci-files)
+- [Dynamic Pipeline generator code files](https://github.com/jamalshahverdiev/gitlab-pipeline-generator/tree/main/pipeline-generator-files)
