@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-deployment
+  namespace: gitlab-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      labels:
+        app: webhook
+    spec:
+      containers:
+      - name: webhook-container
+        image: jamalshahverdiev/gitlabwebhook:v0.0.17
+        env:
+        - name: JIRA_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret
+              key: JIRA_SERVER
+        - name: JIRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret
+              key: JIRA_USERNAME
+        - name: JIRA_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret
+              key: JIRA_API_TOKEN
+        - name: SECRET_TOKEN  # Adding SECRET_TOKEN environment variable
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret  # Assuming your secret's name is webhook-secret
+              key: SECRET_TOKEN
