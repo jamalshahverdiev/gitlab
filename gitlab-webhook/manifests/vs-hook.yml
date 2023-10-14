@@ -2,10 +2,9 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   annotations:
-    external-dns.dif.tech/private: "true"
+    external-dns.domain.com/private: "true"
   labels:
     app: gitlab-mr-hook-listener
-    dif.tech/argocd: gitlab-mr-hook-listener-dt-mng-euc1-infra
     env: dev
     release: gitlab-hook-listener
     team: cloud
@@ -15,7 +14,7 @@ spec:
   gateways:
   - istio-system/istio-ingressgateway-private
   hosts:
-  - gitlab-mr-hook-listener-dev.beta.diftech.org
+  - gitlab-mr-hook-listener-dev.domain.com
   http:
   - route:
     - destination:
