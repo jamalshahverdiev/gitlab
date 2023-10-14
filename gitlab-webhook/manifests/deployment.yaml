@@ -12,10 +12,11 @@ spec:
     metadata:
       labels:
         app: webhook
+        team: cloud
     spec:
       containers:
       - name: webhook-container
-        image: jamalshahverdiev/gitlabwebhook:v0.0.17
+        image: imagepath.domain.doc/registry:tagv.0.0.1
         env:
         - name: JIRA_SERVER
           valueFrom:
@@ -32,8 +33,23 @@ spec:
             secretKeyRef:
               name: webhook-secret
               key: JIRA_API_TOKEN
-        - name: SECRET_TOKEN  # Adding SECRET_TOKEN environment variable
+        - name: SECRET_TOKEN  
           valueFrom:
             secretKeyRef:
-              name: webhook-secret  # Assuming your secret's name is webhook-secret
+              name: webhook-secret  
               key: SECRET_TOKEN
+        - name: SLACK_API_TOKEN  
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret  
+              key: SLACK_API_TOKEN
+        - name: GITLAB_TOKEN  
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret  
+              key: GITLAB_TOKEN
+        - name: GITLAB_URL
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret  
+              key: GITLAB_URL
