@@ -1,2 +1,2 @@
 - [Close MR in case of Jira ticket not exists and Post to Slack](https://github.com/jamalshahverdiev/gitlab/tree/main/webhooks/mr-closer)
-- [Change Service Account access leve to Auditor](https://github.com/jamalshahverdiev/gitlab/tree/main/webhooks/service-user-access)
+- [Change Service Account access level to Auditor](https://github.com/jamalshahverdiev/gitlab/tree/main/webhooks/service-user-access)
