@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auditor-wh-service
+  namespace: gitlab-webhook
+spec:
+  ports:
+  - port: 13100
+    targetPort: 8080
+  selector:
+    app: auditor-wh

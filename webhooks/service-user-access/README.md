@@ -1,0 +1,1 @@
+http://auditor-wh-dev.domain.com/gitlab-webhook

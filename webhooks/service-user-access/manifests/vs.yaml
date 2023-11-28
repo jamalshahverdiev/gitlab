@@ -1,0 +1,23 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  annotations:
+    external-dns.domain.com/private: "true"
+  labels:
+    app: auditor-wh-listener
+    env: dev
+    release: gitlab-hook-listener
+    team: cloud
+  name: auditor-wh-private
+  namespace: gitlab-webhook
+spec:
+  gateways:
+  - istio-system/istio-ingressgateway-private
+  hosts:
+  - auditor-wh-dev.domain.com
+  http:
+  - route:
+    - destination:
+        host: auditor-wh-service
+        port:
+          number: 13100
