@@ -4,11 +4,8 @@ from os import environ
 from logging import basicConfig, DEBUG, info, warning, error
 
 app = Flask(__name__)
-
-# Configure logging
 basicConfig(level=DEBUG)
 
-# Retrieve environment variables
 GITLAB_URL = environ.get('GITLAB_URL', 'https://gitlab.domain.dom')
 TOKEN = environ.get('GITLAB_TOKEN', '')
 SECRET_TOKEN = environ.get('SECRET_TOKEN', '')
@@ -19,7 +16,7 @@ def get_user_details(username):
     if response.status_code == 200:
         users = response.json()
         if users:
-            return users[0]  # Assuming the first user is the correct one
+            return users[0]  
     else:
         error(f"Failed to get user details for username {username}: {response.status_code}, {response.text}")
     return None
@@ -33,10 +30,8 @@ def set_user_as_auditor(user_id):
 
 @app.route('/', methods=['GET'])
 def index():
-    # Get the secret token from the request headers
     token = request.headers.get('X-Secret-Token')
 
-    # Check if the token matches
     if token == SECRET_TOKEN:
         return "Token verified successfully", 200
     else:
@@ -44,17 +39,14 @@ def index():
 
 @app.route('/gitlab-webhook', methods=['POST'])
 def gitlab_webhook():
-    # Log the request for debugging
     info("Received a request: %s", request.data.decode("utf-8"))
 
-    # Verify the secret token
     if request.headers.get('X-Gitlab-Token') != SECRET_TOKEN:
         warning("Invalid secret token received.")
         return 'Invalid secret token', 403
 
     data = request.json
 
-    # Check if the event is about user creation
     if data and data.get('event_name') == 'user_create':
         info("Processing user_create event")
         user_id = data.get('user_id')
