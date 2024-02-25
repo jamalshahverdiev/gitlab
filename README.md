@@ -1,2 +1,3 @@
 - [Gitlab Pipeline Generator](https://github.com/jamalshahverdiev/gitlab-pipeline-generator/tree/main/gitlab-pipeline-generator)
 - [WebHooks](https://github.com/jamalshahverdiev/gitlab/tree/main/webhooks)
+- [Selenium](https://github.com/jamalshahverdiev/gitlab/tree/main/selenium-tests)
